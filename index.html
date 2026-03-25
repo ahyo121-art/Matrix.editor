@@ -1,0 +1,1191 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SmartVolt Matrix Editor</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;600;700&display=swap');
+
+  :root {
+    --bg: #080c10;
+    --bg2: #0d1318;
+    --bg3: #111820;
+    --border: #1e2d3d;
+    --accent: #00d4ff;
+    --accent2: #ff6b00;
+    --accent3: #00ff88;
+    --rem: #ff2244;
+    --dim: #4a6080;
+    --text: #c8dce8;
+    --pixel-on: #ffdd00;
+    --pixel-off: #0a1520;
+    --grid: #1a2535;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Rajdhani', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.08) 2px,
+      rgba(0,0,0,0.08) 4px
+    );
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  header {
+    background: linear-gradient(135deg, #0d1318 0%, #111e2a 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .logo {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 1.1em;
+    color: var(--accent);
+    letter-spacing: 2px;
+    text-shadow: 0 0 20px rgba(0,212,255,0.5);
+  }
+
+  .logo span { color: var(--accent2); }
+  header .sub { font-size: .8em; color: var(--dim); letter-spacing: 1px; }
+
+  .main {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 20px 16px;
+  }
+
+  .zone-tabs {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+
+  .zone-tab {
+    padding: 8px 16px;
+    border: 1px solid var(--border);
+    background: var(--bg2);
+    color: var(--dim);
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 600;
+    font-size: .9em;
+    letter-spacing: 1px;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all .2s;
+  }
+
+  .zone-tab:hover { border-color: var(--accent); color: var(--accent); }
+  .zone-tab.active { background: var(--accent); color: #000; border-color: var(--accent); }
+  .zone-tab.active.rem { background: var(--rem); border-color: var(--rem); }
+  .zone-tab.active.skr { background: var(--accent2); border-color: var(--accent2); }
+  .zone-tab.active.skn { background: var(--accent2); border-color: var(--accent2); }
+
+  .card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 14px;
+  }
+
+  .card-title {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: .8em;
+    color: var(--dim);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .cfg-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+  }
+
+  .cfg-row label {
+    font-size: .85em;
+    color: var(--dim);
+    min-width: 80px;
+    letter-spacing: .5px;
+  }
+
+  select, input[type=number], input[type=range], input[type=text] {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 6px 10px;
+    border-radius: 4px;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: .9em;
+  }
+
+  select:focus, input:focus { outline: none; border-color: var(--accent); }
+
+  .canvas-wrap {
+    overflow-x: auto;
+    margin: 12px 0;
+    padding: 4px;
+  }
+
+  #matrixCanvas {
+    display: block;
+    cursor: crosshair;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    touch-action: none;
+    image-rendering: pixelated;
+  }
+
+  .frame-ctrl {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin: 10px 0;
+  }
+
+  .frame-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: .85em;
+    color: var(--accent);
+    min-width: 90px;
+    text-align: center;
+  }
+
+  /* ── Transform toolbar ── */
+  .transform-bar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin: 8px 0 4px;
+    padding: 10px 12px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+  }
+
+  .transform-bar .tb-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: .72em;
+    color: var(--dim);
+    letter-spacing: 1.5px;
+    margin-right: 4px;
+  }
+
+  .tb-sep {
+    width: 1px;
+    height: 22px;
+    background: var(--border);
+    margin: 0 4px;
+  }
+
+  .btn {
+    padding: 7px 14px;
+    border: 1px solid var(--border);
+    background: var(--bg3);
+    color: var(--text);
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 600;
+    font-size: .85em;
+    letter-spacing: .5px;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all .15s;
+  }
+
+  .btn:hover { border-color: var(--accent); color: var(--accent); }
+  .btn:active { transform: scale(0.96); }
+  .btn.primary { background: var(--accent); color: #000; border-color: var(--accent); }
+  .btn.primary:hover { background: #00b8e0; }
+  .btn.danger { border-color: var(--rem); color: var(--rem); }
+  .btn.danger:hover { background: var(--rem); color: #fff; }
+  .btn.success { border-color: var(--accent3); color: var(--accent3); }
+  .btn.success:hover { background: var(--accent3); color: #000; }
+  .btn.erase-on { background: var(--accent2); color: #000; border-color: var(--accent2); }
+  .btn.warn { border-color: var(--accent2); color: var(--accent2); }
+  .btn.warn:hover { background: var(--accent2); color: #000; }
+  .btn.rotate { border-color: #9966ff; color: #9966ff; font-size: .9em; }
+  .btn.rotate:hover { background: #9966ff; color: #fff; }
+  .btn.shift { border-color: #33ccaa; color: #33ccaa; font-size: 1em; padding: 5px 10px; }
+  .btn.shift:hover { background: #33ccaa; color: #000; }
+
+  /* Preview */
+  .preview-wrap {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin: 10px 0;
+    flex-wrap: wrap;
+  }
+
+  #previewCanvas {
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    image-rendering: pixelated;
+  }
+
+  .preview-ctrl {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  /* Smooth preview toggle */
+  .smooth-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: .82em;
+    color: var(--dim);
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .smooth-toggle input[type=checkbox] {
+    accent-color: var(--accent3);
+    width: 14px; height: 14px;
+    cursor: pointer;
+  }
+
+  .smooth-toggle:hover { color: var(--accent3); }
+
+  .hex-output {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 10px 12px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: .72em;
+    color: var(--accent3);
+    word-break: break-all;
+    max-height: 100px;
+    overflow-y: auto;
+    margin: 8px 0;
+    line-height: 1.6;
+  }
+
+  .hex-output:empty::before {
+    content: '// Klik Generate untuk membuat hex string...';
+    color: var(--dim);
+  }
+
+  .statusbar {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+  }
+
+  .stat {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 6px 12px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: .78em;
+  }
+
+  .stat span { color: var(--accent); }
+
+  #toast {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--accent3);
+    color: #000;
+    padding: 10px 24px;
+    border-radius: 20px;
+    font-weight: 700;
+    font-size: .9em;
+    display: none;
+    z-index: 9998;
+    letter-spacing: 1px;
+  }
+
+  .panel-indicator {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 8px;
+  }
+
+  .panel-ind {
+    flex: 1;
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    transition: background .2s;
+  }
+
+  .panel-ind.active { background: var(--accent); }
+
+  .tip {
+    font-size: .78em;
+    color: var(--dim);
+    margin: 6px 0;
+    line-height: 1.5;
+  }
+
+  .tip strong { color: var(--accent2); }
+
+  /* Smooth interpolation indicator on preview */
+  .smooth-badge {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: .7em;
+    padding: 2px 8px;
+    border-radius: 10px;
+    background: rgba(0,255,136,0.12);
+    border: 1px solid var(--accent3);
+    color: var(--accent3);
+    letter-spacing: 1px;
+    display: none;
+  }
+
+  .smooth-badge.on { display: inline-block; }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div class="logo">SMART<span>VOLT</span> // MATRIX EDITOR</div>
+    <div class="sub">32×8 DOT MATRIX ANIMATOR — ATHA_CB</div>
+  </div>
+</header>
+
+<div class="main">
+
+  <div class="zone-tabs">
+    <button class="zone-tab active" onclick="switchZone('snj',this)">🌅 SENJA</button>
+    <button class="zone-tab rem" onclick="switchZone('rem',this)">🔴 REM</button>
+    <button class="zone-tab skr" onclick="switchZone('skr',this)">◀ SEIN KIRI</button>
+    <button class="zone-tab skn" onclick="switchZone('skn',this)">▶ SEIN KANAN</button>
+  </div>
+
+  <div class="statusbar">
+    <div class="stat">ZONA: <span id="statZone">SENJA</span></div>
+    <div class="stat">PANEL: <span id="statPanel">1-2</span></div>
+    <div class="stat">FRAME: <span id="statFrame">1/1</span></div>
+    <div class="stat">PIXEL: <span id="statPixel">0</span></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">⚙ KONFIGURASI ZONA</div>
+    <div class="cfg-row">
+      <label>Panel Mulai</label>
+      <select id="cfgSp" onchange="onCfgChange()">
+        <option value="0">Panel 0 (kiri)</option>
+        <option value="1">Panel 1</option>
+        <option value="2">Panel 2</option>
+        <option value="3">Panel 3 (kanan)</option>
+      </select>
+      <label style="min-width:30px">s/d</label>
+      <select id="cfgEp" onchange="onCfgChange()">
+        <option value="0">Panel 0</option>
+        <option value="1">Panel 1</option>
+        <option value="2">Panel 2</option>
+        <option value="3">Panel 3 (kanan)</option>
+      </select>
+    </div>
+    <div class="cfg-row">
+      <label>Efek</label>
+      <select id="cfgEf">
+        <option value="0">Static</option>
+        <option value="1">Flash</option>
+        <option value="2">Strobo</option>
+        <option value="3">Running Text</option>
+        <option value="4" class="snj-only">Wipe</option>
+        <option value="5" class="snj-only">Scroll Up</option>
+        <option value="6" class="snj-only">Scroll Down</option>
+        <option value="7" class="snj-only">Bounce</option>
+        <option value="8" class="snj-only">Dissolve</option>
+        <option value="9" class="snj-only">Scan Line</option>
+        <option value="10" class="snj-only">Fade</option>
+        <option value="11" class="snj-only">🎲 Random</option>
+      </select>
+    </div>
+    <div class="cfg-row" style="flex-wrap:wrap;gap:8px;">
+      <label>Kecepatan</label>
+      <input type="range" id="cfgSpd" min="50" max="5000" step="50" value="500"
+        oninput="onSpdSlider(this.value)"
+        style="width:140px;">
+      <span id="cfgSpdV" style="font-family:monospace;font-size:.85em;color:var(--accent);min-width:52px;">500ms</span>
+    </div>
+    <div class="cfg-row" style="flex-wrap:wrap;gap:6px;">
+      <label>Preset</label>
+      <button class="btn" style="padding:4px 10px;font-size:.78em;" onclick="setSpd(100)">100ms<br><span style='font-size:.7em;color:var(--dim)'>Cepat</span></button>
+      <button class="btn" style="padding:4px 10px;font-size:.78em;" onclick="setSpd(300)">300ms<br><span style='font-size:.7em;color:var(--dim)'>Normal</span></button>
+      <button class="btn" style="padding:4px 10px;font-size:.78em;" onclick="setSpd(500)">500ms<br><span style='font-size:.7em;color:var(--dim)'>Sedang</span></button>
+      <button class="btn" style="padding:4px 10px;font-size:.78em;" onclick="setSpd(1000)">1s<br><span style='font-size:.7em;color:var(--dim)'>Lambat</span></button>
+      <button class="btn" style="padding:4px 10px;font-size:.78em;" onclick="setSpd(2000)">2s<br><span style='font-size:.7em;color:var(--dim)'>Sangat Lambat</span></button>
+    </div>
+    <div class="cfg-row" id="rtWrap" style="display:none">
+      <label>Running Text</label>
+      <input type="text" id="cfgRt" maxlength="31" value=" TASYA RIDE " style="width:200px;">
+    </div>
+  </div>
+
+  <div class="panel-indicator">
+    <div class="panel-ind" id="pi0"></div>
+    <div class="panel-ind" id="pi1"></div>
+    <div class="panel-ind" id="pi2"></div>
+    <div class="panel-ind" id="pi3"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">✏ PIXEL EDITOR</div>
+    <div class="tip"><strong>Klik/drag</strong> untuk gambar • <strong>Erase mode</strong> untuk hapus per pixel • Setiap panel = 8×8 pixel</div>
+
+    <div class="frame-ctrl">
+      <button class="btn" onclick="prevFrame()">◀</button>
+      <div class="frame-label" id="frameLabel">Frame 1 / 1</div>
+      <button class="btn" onclick="nextFrame()">▶</button>
+      <button class="btn success" onclick="addFrame()">+ Frame</button>
+      <button class="btn danger" onclick="delFrame()">− Frame</button>
+      <button class="btn warn" id="btnErase" onclick="toggleErase()">✏ Erase</button>
+      <button class="btn danger" onclick="clearFrame()">🗑 Clear</button>
+      <button class="btn" onclick="copyFrame()">📋 Duplikat</button>
+    </div>
+
+    <!-- ── Transform toolbar ── -->
+    <div class="transform-bar">
+      <span class="tb-label">ROTATE</span>
+      <button class="btn rotate" onclick="rotateFrame(-1)" title="Rotate 90° kiri">↺ 90°L</button>
+      <button class="btn rotate" onclick="rotateFrame(1)"  title="Rotate 90° kanan">↻ 90°R</button>
+
+      <div class="tb-sep"></div>
+
+      <span class="tb-label">SHIFT</span>
+      <button class="btn shift" onclick="shiftFrame(0,-1)"  title="Shift Atas">↑</button>
+      <button class="btn shift" onclick="shiftFrame(0,1)"   title="Shift Bawah">↓</button>
+      <button class="btn shift" onclick="shiftFrame(-1,0)"  title="Shift Kiri">←</button>
+      <button class="btn shift" onclick="shiftFrame(1,0)"   title="Shift Kanan">→</button>
+
+      <div class="tb-sep"></div>
+      <span class="tb-label" style="color:var(--dim);font-size:.68em">wrap-around</span>
+    </div>
+
+    <div class="canvas-wrap">
+      <canvas id="matrixCanvas"></canvas>
+    </div>
+  </div>
+
+  <!-- Preview -->
+  <div class="card">
+    <div class="card-title">▶ PREVIEW ANIMASI</div>
+    <div class="preview-wrap">
+      <canvas id="previewCanvas" width="320" height="80"></canvas>
+      <div class="preview-ctrl">
+        <button class="btn primary" id="btnPlay" onclick="togglePlay()">▶ Play</button>
+        <button class="btn" onclick="resetPreview()">⏹ Stop</button>
+        <label class="smooth-toggle">
+          <input type="checkbox" id="chkSmooth" onchange="onSmoothToggle()">
+          Smooth interpolate
+        </label>
+        <span class="smooth-badge" id="smoothBadge">SMOOTH ON</span>
+        <div style="font-size:.8em;color:var(--dim);margin-top:2px;">
+          Speed: <span id="previewSpdLabel">150ms</span>
+        </div>
+      </div>
+    </div>
+    <div class="tip" style="margin-top:4px;">
+      <strong>Smooth</strong>: preview fade/crossfade antar frame (tidak mempengaruhi hex output ke ESP32)
+    </div>
+  </div>
+
+  <!-- Output -->
+  <div class="card">
+    <div class="card-title">📤 OUTPUT HEX — PASTE KE ESP32</div>
+    <div class="tip">Klik <strong>Generate</strong> lalu <strong>Copy</strong>, paste di input box web ESP32.</div>
+    <div style="display:flex;gap:8px;margin:10px 0;">
+      <button class="btn primary" onclick="generateHex()">⚡ Generate</button>
+      <button class="btn success" onclick="copyHex()">📋 Copy</button>
+      <button class="btn" onclick="clearOutput()">✕ Clear</button>
+    </div>
+    <div class="hex-output" id="hexOutput"></div>
+    <div style="font-size:.78em;color:var(--dim);margin-top:6px;" id="hexInfo"></div>
+  </div>
+
+  <!-- Import -->
+  <div class="card">
+    <div class="card-title">📥 IMPORT HEX (Load dari ESP32)</div>
+    <div class="tip">Paste hex dari ESP32 untuk edit ulang animasi yang sudah ada.</div>
+    <textarea id="hexImport" style="width:100%;height:60px;background:var(--bg);border:1px solid var(--border);color:var(--accent3);font-family:monospace;font-size:.75em;padding:8px;border-radius:4px;resize:vertical;" placeholder="Paste hex string disini..."></textarea>
+    <div style="display:flex;gap:8px;margin-top:8px;">
+      <button class="btn warn" onclick="importHex()">📥 Import</button>
+    </div>
+  </div>
+
+</div>
+
+<div id="toast">✓ Copied!</div>
+
+<script>
+// ==================== STATE ====================
+var zones = {
+  snj: { sp:1, ep:2, ef:3, spd:500, rt:' TASYA RIDE ', frames:[], curFrame:0, name:'SENJA' },
+  rem: { sp:0, ep:3, ef:1, spd:500, rt:'', frames:[], curFrame:0, name:'REM' },
+  skr: { sp:0, ep:0, ef:1, spd:500, rt:'', frames:[], curFrame:0, name:'SEIN KIRI' },
+  skn: { sp:3, ep:3, ef:1, spd:500, rt:'', frames:[], curFrame:0, name:'SEIN KANAN' }
+};
+
+var curZone = 'snj';
+var eraseMode = false;
+var isDrawing = false;
+var drawVal = 1;
+var S = 14;
+var MAX_F = 32;
+var previewPlaying = false;
+var previewAnimId = null;
+var previewFrame = 0;
+var smoothMode = false;
+
+// Smooth preview state
+var smoothT = 0;       // 0..1 interpolation progress
+var smoothFrom = null; // pixel array (flat)
+var smoothTo   = null;
+var smoothLastTime = 0;
+
+for (var z in zones) {
+  var panels = zones[z].ep - zones[z].sp + 1;
+  zones[z].frames = [new Array(panels * 64).fill(0)];
+}
+
+// ==================== ZONE SWITCH ====================
+function switchZone(z, btn) {
+  saveCfgToZone();
+  curZone = z;
+  document.querySelectorAll('.zone-tab').forEach(function(b){ b.classList.remove('active'); });
+  btn.classList.add('active');
+  loadCfgFromZone();
+  resizeCanvas();
+  redraw();
+  updateStatus();
+  updatePanelIndicator();
+  var isSenja = (z === 'snj');
+  document.querySelectorAll('.snj-only').forEach(function(o){
+    o.style.display = isSenja ? '' : 'none';
+  });
+}
+
+function saveCfgToZone() {
+  var z = zones[curZone];
+  z.sp  = +document.getElementById('cfgSp').value;
+  z.ep  = +document.getElementById('cfgEp').value;
+  z.ef  = +document.getElementById('cfgEf').value;
+  z.spd = +document.getElementById('cfgSpd').value;
+  z.rt  = document.getElementById('cfgRt').value;
+}
+
+function loadCfgFromZone() {
+  var z = zones[curZone];
+  document.getElementById('cfgSp').value  = z.sp;
+  document.getElementById('cfgEp').value  = z.ep;
+  document.getElementById('cfgEf').value  = z.ef;
+  document.getElementById('cfgSpd').value = z.spd;
+  document.getElementById('cfgSpdV').innerText = z.spd + 'ms';
+  document.getElementById('cfgRt').value  = z.rt;
+  document.getElementById('rtWrap').style.display = (z.ef == 3) ? 'flex' : 'none';
+  document.getElementById('previewSpdLabel').innerText = z.spd + 'ms';
+}
+
+function onCfgChange() {
+  var sp = +document.getElementById('cfgSp').value;
+  var ep = +document.getElementById('cfgEp').value;
+  if (ep < sp) { ep = sp; document.getElementById('cfgEp').value = ep; }
+  var ef = +document.getElementById('cfgEf').value;
+  document.getElementById('rtWrap').style.display = (ef == 3) ? 'flex' : 'none';
+
+  var z = zones[curZone];
+  var oldPanels = z.ep - z.sp + 1;
+  var newPanels = ep - sp + 1;
+  z.sp = sp; z.ep = ep; z.ef = ef;
+
+  if (newPanels !== oldPanels) {
+    z.frames = z.frames.map(function(){ return new Array(newPanels * 64).fill(0); });
+    z.curFrame = 0;
+  }
+
+  resizeCanvas();
+  redraw();
+  updateStatus();
+  updatePanelIndicator();
+}
+
+// ==================== CANVAS ====================
+function resizeCanvas() {
+  var z = zones[curZone];
+  var panels = z.ep - z.sp + 1;
+  var cvs = document.getElementById('matrixCanvas');
+  // Auto pixel size sesuai lebar layar HP/desktop
+  var maxW = Math.min(window.innerWidth - 32, 700);
+  S = Math.max(5, Math.floor(maxW / (panels * 8)));
+  cvs.width  = panels * 8 * S;
+  cvs.height = 8 * S;
+}
+
+function redraw() {
+  var z = zones[curZone];
+  var panels = z.ep - z.sp + 1;
+  var cvs = document.getElementById('matrixCanvas');
+  var ctx = cvs.getContext('2d');
+  var frame = z.frames[z.curFrame] || [];
+
+  var panelColors = ['#0a1520','#0a2015','#200a10','#10100a'];
+  for (var p = 0; p < panels; p++) {
+    ctx.fillStyle = panelColors[p % 4];
+    ctx.fillRect(p*8*S, 0, 8*S, 8*S);
+  }
+
+  for (var p = 0; p < panels; p++) {
+    for (var row = 0; row < 8; row++) {
+      for (var col = 0; col < 8; col++) {
+        var idx = p*64 + row*8 + col;
+        if (frame[idx]) {
+          ctx.fillStyle = '#ffdd00';
+          ctx.shadowColor = '#ffdd00';
+          ctx.shadowBlur = 4;
+          ctx.fillRect(p*8*S + col*S + 1, row*S + 1, S-2, S-2);
+          ctx.shadowBlur = 0;
+        }
+      }
+    }
+  }
+
+  ctx.strokeStyle = '#1a2535';
+  ctx.lineWidth = 0.5;
+  for (var x = 0; x <= panels*8; x++) {
+    ctx.beginPath(); ctx.moveTo(x*S, 0); ctx.lineTo(x*S, 8*S); ctx.stroke();
+  }
+  for (var y = 0; y <= 8; y++) {
+    ctx.beginPath(); ctx.moveTo(0, y*S); ctx.lineTo(panels*8*S, y*S); ctx.stroke();
+  }
+
+  ctx.strokeStyle = '#2a3d55';
+  ctx.lineWidth = 2;
+  for (var p = 1; p < panels; p++) {
+    ctx.beginPath(); ctx.moveTo(p*8*S, 0); ctx.lineTo(p*8*S, 8*S); ctx.stroke();
+  }
+
+  updateStatus();
+  updateFrameLabel();
+}
+
+var cvs = document.getElementById('matrixCanvas');
+
+cvs.addEventListener('mousedown', function(e) {
+  isDrawing = true;
+  var c = getCell(e);
+  var z = zones[curZone];
+  var panels = z.ep - z.sp + 1;
+  if (c.col >= 0 && c.col < panels*8 && c.row >= 0 && c.row < 8) {
+    var idx = Math.floor(c.col/8)*64 + c.row*8 + (c.col%8);
+    drawVal = z.frames[z.curFrame][idx] ? 0 : 1;
+  }
+  paint(e);
+});
+
+cvs.addEventListener('mousemove', function(e) { if (isDrawing) paint(e); });
+cvs.addEventListener('mouseup',   function() { isDrawing = false; });
+cvs.addEventListener('mouseleave',function() { isDrawing = false; });
+cvs.addEventListener('touchstart', function(e) { e.preventDefault(); isDrawing = true; paint(e); }, {passive:false});
+cvs.addEventListener('touchmove',  function(e) { e.preventDefault(); if(isDrawing) paint(e); }, {passive:false});
+cvs.addEventListener('touchend',   function() { isDrawing = false; });
+
+function getCell(e) {
+  var r = cvs.getBoundingClientRect();
+  var cx = (e.touches ? e.touches[0].clientX : e.clientX) - r.left;
+  var cy = (e.touches ? e.touches[0].clientY : e.clientY) - r.top;
+  return { col: Math.floor(cx/S), row: Math.floor(cy/S) };
+}
+
+function paint(e) {
+  var c = getCell(e);
+  var z = zones[curZone];
+  var panels = z.ep - z.sp + 1;
+  if (c.col < 0 || c.col >= panels*8 || c.row < 0 || c.row >= 8) return;
+  var idx = Math.floor(c.col/8)*64 + c.row*8 + (c.col%8);
+  z.frames[z.curFrame][idx] = eraseMode ? 0 : drawVal;
+  redraw();
+}
+
+// ==================== FRAME CONTROLS ====================
+function prevFrame() {
+  var z = zones[curZone];
+  if (z.curFrame > 0) { z.curFrame--; redraw(); }
+}
+
+function nextFrame() {
+  var z = zones[curZone];
+  if (z.curFrame < z.frames.length-1) { z.curFrame++; redraw(); }
+}
+
+function addFrame() {
+  var z = zones[curZone];
+  if (z.frames.length >= MAX_F) { alert('Max ' + MAX_F + ' frame!'); return; }
+  var copy = z.frames[z.curFrame].slice();
+  z.frames.push(copy);
+  z.curFrame = z.frames.length - 1;
+  redraw();
+}
+
+function delFrame() {
+  var z = zones[curZone];
+  if (z.frames.length <= 1) { alert('Min 1 frame!'); return; }
+  z.frames.splice(z.curFrame, 1);
+  if (z.curFrame >= z.frames.length) z.curFrame = z.frames.length - 1;
+  redraw();
+}
+
+function clearFrame() {
+  if (!confirm('Clear semua pixel di frame ini?')) return;
+  var z = zones[curZone];
+  var panels = z.ep - z.sp + 1;
+  z.frames[z.curFrame] = new Array(panels*64).fill(0);
+  redraw();
+}
+
+function copyFrame() {
+  var z = zones[curZone];
+  if (z.frames.length >= MAX_F) { alert('Max ' + MAX_F + ' frame!'); return; }
+  var copy = z.frames[z.curFrame].slice();
+  z.frames.splice(z.curFrame+1, 0, copy);
+  z.curFrame++;
+  redraw();
+}
+
+function toggleErase() {
+  eraseMode = !eraseMode;
+  var btn = document.getElementById('btnErase');
+  btn.innerText = eraseMode ? '✏ Erase ON' : '✏ Erase';
+  btn.className = eraseMode ? 'btn erase-on' : 'btn warn';
+}
+
+// ==================== ROTATE ====================
+// dir: -1 = kiri (CCW), +1 = kanan (CW)
+// Grid: panels*8 wide, 8 tall — rotate bisa ubah dimensi!
+// Kalau panels*8 == 8 (square): pure 90° rotation
+// Kalau bukan square: kita rotate setiap panel 8×8 secara independen
+function rotateFrame(dir) {
+  var z = zones[curZone];
+  var panels = z.ep - z.sp + 1;
+  var frame = z.frames[z.curFrame];
+  var newFrame = new Array(panels * 64).fill(0);
+
+  // Rotate tiap panel 8x8 independen
+  // CW: newRow = col,        newCol = (7 - row)
+  // CCW:newRow = (7 - col),  newCol = row
+  for (var p = 0; p < panels; p++) {
+    for (var row = 0; row < 8; row++) {
+      for (var col = 0; col < 8; col++) {
+        var srcIdx = p*64 + row*8 + col;
+        var nr, nc;
+        if (dir === 1) {        // CW
+          nr = col;
+          nc = 7 - row;
+        } else {                // CCW
+          nr = 7 - col;
+          nc = row;
+        }
+        var dstIdx = p*64 + nr*8 + nc;
+        newFrame[dstIdx] = frame[srcIdx];
+      }
+    }
+  }
+
+  z.frames[z.curFrame] = newFrame;
+  redraw();
+  showToast(dir === 1 ? '↻ Rotate 90° CW' : '↺ Rotate 90° CCW');
+}
+
+// ==================== SHIFT (wrap-around) ====================
+// dx: +1=kanan, -1=kiri  |  dy: +1=bawah, -1=atas
+function shiftFrame(dx, dy) {
+  var z = zones[curZone];
+  var panels = z.ep - z.sp + 1;
+  var W = panels * 8; // total width in pixels
+  var H = 8;
+  var frame = z.frames[z.curFrame];
+  var newFrame = new Array(panels * 64).fill(0);
+
+  for (var row = 0; row < H; row++) {
+    for (var col = 0; col < W; col++) {
+      // source setelah shift
+      var srcCol = ((col - dx) % W + W) % W;
+      var srcRow = ((row - dy) % H + H) % H;
+      var sp = Math.floor(srcCol / 8);
+      var sc = srcCol % 8;
+      var srcIdx = sp * 64 + srcRow * 8 + sc;
+
+      var dp = Math.floor(col / 8);
+      var dc = col % 8;
+      var dstIdx = dp * 64 + row * 8 + dc;
+
+      newFrame[dstIdx] = frame[srcIdx];
+    }
+  }
+
+  z.frames[z.curFrame] = newFrame;
+  redraw();
+
+  var dirLabel = '';
+  if (dx ===  1) dirLabel = '→ Shift Kanan';
+  if (dx === -1) dirLabel = '← Shift Kiri';
+  if (dy ===  1) dirLabel = '↓ Shift Bawah';
+  if (dy === -1) dirLabel = '↑ Shift Atas';
+  showToast(dirLabel);
+}
+
+// ==================== PREVIEW ====================
+function onSmoothToggle() {
+  smoothMode = document.getElementById('chkSmooth').checked;
+  document.getElementById('smoothBadge').className = smoothMode ? 'smooth-badge on' : 'smooth-badge';
+}
+
+function togglePlay() {
+  if (previewPlaying) {
+    stopPreview();
+  } else {
+    startPreview();
+  }
+}
+
+function startPreview() {
+  saveCfgToZone();
+  previewPlaying = true;
+  previewFrame = 0;
+  smoothT = 0;
+  document.getElementById('btnPlay').innerText = '⏸ Pause';
+  var z = zones[curZone];
+  smoothFrom = z.frames[previewFrame].slice();
+  smoothTo   = z.frames[(previewFrame + 1) % z.frames.length].slice();
+  smoothLastTime = performance.now();
+  if (smoothMode) {
+    runPreviewSmooth();
+  } else {
+    runPreviewStep();
+  }
+}
+
+function stopPreview() {
+  previewPlaying = false;
+  if (previewAnimId) { cancelAnimationFrame(previewAnimId); clearTimeout(previewAnimId); }
+  document.getElementById('btnPlay').innerText = '▶ Play';
+}
+
+function resetPreview() {
+  stopPreview();
+  previewFrame = 0;
+  drawPreviewFrameRaw(0, 1.0);
+}
+
+// ─── Step preview (no interpolation) ───
+function runPreviewStep() {
+  if (!previewPlaying || smoothMode) return;
+  var z = zones[curZone];
+  drawPreviewFrameRaw(previewFrame, 1.0);
+  previewFrame = (previewFrame + 1) % z.frames.length;
+  previewAnimId = setTimeout(runPreviewStep, z.spd);
+}
+
+// ─── Smooth preview using rAF ───
+function runPreviewSmooth() {
+  if (!previewPlaying || !smoothMode) return;
+  var z = zones[curZone];
+  var now = performance.now();
+  var elapsed = now - smoothLastTime;
+  smoothT = Math.min(elapsed / z.spd, 1.0);
+
+  drawPreviewInterp(smoothFrom, smoothTo, smoothT);
+
+  if (smoothT >= 1.0) {
+    // Advance frame
+    previewFrame = (previewFrame + 1) % z.frames.length;
+    smoothFrom = z.frames[previewFrame].slice();
+    smoothTo   = z.frames[(previewFrame + 1) % z.frames.length].slice();
+    smoothT = 0;
+    smoothLastTime = now;
+  }
+
+  previewAnimId = requestAnimationFrame(runPreviewSmooth);
+}
+
+// Draw interpolated frame: blends A->B by t using brightness threshold
+function drawPreviewInterp(frameA, frameB, t) {
+  var z = zones[curZone];
+  var panels = z.ep - z.sp + 1;
+  var cvs = document.getElementById('previewCanvas');
+  var pw = Math.min(panels * 80, 320);
+  var ph = 80;
+  cvs.width  = pw;
+  cvs.height = ph;
+  var ctx = cvs.getContext('2d');
+  var cellW = pw / (panels * 8);
+  var cellH = ph / 8;
+
+  ctx.fillStyle = '#040810';
+  ctx.fillRect(0, 0, pw, ph);
+
+  // Easing — smooth ease-in-out
+  var et = t < 0.5 ? 2*t*t : -1+(4-2*t)*t;
+
+  for (var p = 0; p < panels; p++) {
+    for (var row = 0; row < 8; row++) {
+      for (var col = 0; col < 8; col++) {
+        var idx  = p*64 + row*8 + col;
+        var va   = frameA[idx] || 0;
+        var vb   = frameB[idx] || 0;
+
+        // Blend: brightness 0..1
+        var bright;
+        if (va === vb) {
+          bright = va;
+        } else if (va === 1 && vb === 0) {
+          bright = 1 - et;   // fade out
+        } else {
+          bright = et;        // fade in
+        }
+
+        if (bright < 0.02) continue;
+
+        var x = (p*8 + col) * cellW;
+        var y = row * cellH;
+
+        // Alpha mapping
+        ctx.globalAlpha = bright;
+        var grd = ctx.createRadialGradient(
+          x + cellW/2, y + cellH/2, 0,
+          x + cellW/2, y + cellH/2, cellW
+        );
+        grd.addColorStop(0, '#ffee44');
+        grd.addColorStop(1, '#ff8800');
+        ctx.fillStyle = grd;
+        ctx.fillRect(x+1, y+1, cellW-2, cellH-2);
+      }
+    }
+  }
+  ctx.globalAlpha = 1.0;
+}
+
+function drawPreviewFrameRaw(fi, alpha) {
+  var z = zones[curZone];
+  var panels = z.ep - z.sp + 1;
+  var cvs = document.getElementById('previewCanvas');
+  var pw = Math.min(panels * 80, 320);
+  var ph = 80;
+  cvs.width  = pw;
+  cvs.height = ph;
+  var ctx = cvs.getContext('2d');
+  var cellW = pw / (panels * 8);
+  var cellH = ph / 8;
+
+  ctx.fillStyle = '#040810';
+  ctx.fillRect(0, 0, pw, ph);
+
+  var frame = z.frames[fi] || [];
+  for (var p = 0; p < panels; p++) {
+    for (var row = 0; row < 8; row++) {
+      for (var col = 0; col < 8; col++) {
+        var idx = p*64 + row*8 + col;
+        if (frame[idx]) {
+          var grd = ctx.createRadialGradient(
+            (p*8+col)*cellW + cellW/2, row*cellH + cellH/2, 0,
+            (p*8+col)*cellW + cellW/2, row*cellH + cellH/2, cellW
+          );
+          grd.addColorStop(0, '#ffee44');
+          grd.addColorStop(1, '#ff8800');
+          ctx.fillStyle = grd;
+          ctx.fillRect((p*8+col)*cellW+1, row*cellH+1, cellW-2, cellH-2);
+        }
+      }
+    }
+  }
+}
+
+// ==================== HEX OUTPUT ====================
+function generateHex() {
+  saveCfgToZone();
+  var z = zones[curZone];
+  var panels = z.ep - z.sp + 1;
+  var bmp = '';
+  for (var f = 0; f < z.frames.length; f++) {
+    for (var p = 0; p < panels; p++) {
+      for (var row = 0; row < 8; row++) {
+        var val = 0;
+        for (var bit = 0; bit < 8; bit++) {
+          var idx = p*64 + row*8 + bit;
+          if (z.frames[f][idx]) val |= (1 << (7-bit));
+        }
+        var hx = val.toString(16);
+        if (hx.length < 2) hx = '0' + hx;
+        bmp += f + ',' + p + ',' + row + ',' + hx + ';';
+      }
+    }
+  }
+
+  document.getElementById('hexOutput').innerText = bmp;
+  var byteCount = bmp.length;
+  document.getElementById('hexInfo').innerText =
+    'Zone: ' + z.name + ' | Frames: ' + z.frames.length +
+    ' | Panels: ' + panels + ' | Size: ' + byteCount + ' chars';
+}
+
+function copyHex() {
+  var txt = document.getElementById('hexOutput').innerText;
+  if (!txt) { alert('Generate dulu!'); return; }
+  navigator.clipboard.writeText(txt).then(function() {
+    showToast('✓ Hex copied!');
+  }).catch(function() {
+    var ta = document.createElement('textarea');
+    ta.value = txt;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    showToast('✓ Copied!');
+  });
+}
+
+function clearOutput() {
+  document.getElementById('hexOutput').innerText = '';
+  document.getElementById('hexInfo').innerText = '';
+}
+
+// ==================== HEX IMPORT ====================
+function importHex() {
+  var hex = document.getElementById('hexImport').value.trim();
+  if (!hex) { alert('Paste hex dulu!'); return; }
+
+  var z = zones[curZone];
+  var panels = z.ep - z.sp + 1;
+  var maxF = 0;
+  hex.split(';').forEach(function(tok) {
+    if (!tok) return;
+    var p = tok.split(',');
+    if (p.length >= 4) maxF = Math.max(maxF, +p[0]);
+  });
+
+  z.frames = [];
+  for (var f = 0; f <= maxF; f++) {
+    z.frames.push(new Array(panels * 64).fill(0));
+  }
+
+  hex.split(';').forEach(function(tok) {
+    if (!tok) return;
+    var p = tok.split(',');
+    if (p.length < 4) return;
+    var f = +p[0], pn = +p[1], row = +p[2], val = parseInt(p[3], 16);
+    for (var bit = 0; bit < 8; bit++) {
+      if ((val >> (7-bit)) & 1) {
+        var idx = pn*64 + row*8 + bit;
+        if (z.frames[f] && idx < z.frames[f].length)
+          z.frames[f][idx] = 1;
+      }
+    }
+  });
+
+  z.curFrame = 0;
+  redraw();
+  showToast('✓ Import OK! ' + z.frames.length + ' frame');
+}
+
+// ==================== UI HELPERS ====================
+function updateStatus() {
+  var z = zones[curZone];
+  document.getElementById('statZone').innerText = z.name;
+  document.getElementById('statPanel').innerText = z.sp + '-' + z.ep;
+  document.getElementById('statFrame').innerText = (z.curFrame+1) + '/' + z.frames.length;
+  var frame = z.frames[z.curFrame] || [];
+  var count = frame.filter(function(v){ return v; }).length;
+  document.getElementById('statPixel').innerText = count;
+}
+
+function updateFrameLabel() {
+  var z = zones[curZone];
+  document.getElementById('frameLabel').innerText =
+    'Frame ' + (z.curFrame+1) + ' / ' + z.frames.length;
+}
+
+function updatePanelIndicator() {
+  var z = zones[curZone];
+  for (var i = 0; i < 4; i++) {
+    var el = document.getElementById('pi' + i);
+    el.className = 'panel-ind' + (i >= z.sp && i <= z.ep ? ' active' : '');
+    el.style.background = (i >= z.sp && i <= z.ep) ? 'var(--accent)' : '';
+  }
+}
+
+function showToast(msg) {
+  var t = document.getElementById('toast');
+  t.innerText = msg;
+  t.style.display = 'block';
+  setTimeout(function(){ t.style.display = 'none'; }, 1800);
+}
+
+// Auto resize saat orientasi HP berubah
+window.addEventListener('resize', function() {
+  resizeCanvas();
+  redraw();
+});
+
+function setSpd(ms) {
+  document.getElementById('cfgSpd').value = ms;
+  onSpdSlider(ms);
+}
+
+function onSpdSlider(val) {
+  document.getElementById('cfgSpdV').innerText = val + 'ms';
+  document.getElementById('previewSpdLabel').innerText = val + 'ms';
+  // Update zona langsung
+  zones[curZone].spd = +val;
+}
+
+// ==================== INIT ====================
+resizeCanvas();
+loadCfgFromZone();
+redraw();
+updatePanelIndicator();
+drawPreviewFrameRaw(0, 1.0);
+
+document.querySelectorAll('.snj-only').forEach(function(o){ o.style.display = ''; });
+
+document.getElementById('cfgEf').addEventListener('change', function() {
+  document.getElementById('rtWrap').style.display = (this.value == 3) ? 'flex' : 'none';
+});
+
+document.getElementById('cfgSpd').addEventListener('input', function() {
+  document.getElementById('previewSpdLabel').innerText = this.value + 'ms';
+});
+</script>
+</body>
+</html>
