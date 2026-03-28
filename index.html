@@ -463,7 +463,7 @@
 
   <div class="card">
     <div class="card-title">✏ PIXEL EDITOR</div>
-    <div class="tip"><strong>Klik/drag</strong> untuk gambar • <strong>Erase mode</strong> untuk hapus per pixel • Setiap panel = 8×8 pixel</div>
+    <div class="tip"><strong>Klik/drag</strong> untuk gambar • <strong>hapus </strong> untuk hapus per pixel</div>
 
     <div class="frame-ctrl">
       <button class="btn" onclick="prevFrame()">◀</button>
@@ -471,7 +471,7 @@
       <button class="btn" onclick="nextFrame()">▶</button>
       <button class="btn success" onclick="addFrame()">+ Frame</button>
       <button class="btn danger" onclick="delFrame()">− Frame</button>
-      <button class="btn warn" id="btnErase" onclick="toggleErase()">✏ Erase</button>
+     
       <button class="btn danger" onclick="clearFrame()">🗑 Clear</button>
       <button class="btn" onclick="copyFrame()">📋 Duplikat</button>
     </div>
@@ -481,7 +481,7 @@
       <span class="tb-label">ROTATE</span>
       <button class="btn rotate" onclick="rotateFrame(-1)" title="Rotate 90° kiri">↺ 90°L</button>
       <button class="btn rotate" onclick="rotateFrame(1)"  title="Rotate 90° kanan">↻ 90°R</button>
-
+       <button class="btn warn" id="btnErase" onclick="toggleErase()">✏ hapus</button>
       <div class="tb-sep"></div>
 
       <span class="tb-label">SHIFT</span>
@@ -491,8 +491,7 @@
       <button class="btn shift" onclick="shiftFrame(1,0)"   title="Shift Kanan">→</button>
 
       <div class="tb-sep"></div>
-      <span class="tb-label" style="color:var(--dim);font-size:.68em">wrap-around</span>
-    </div>
+
 
     <div class="canvas-wrap">
       <canvas id="matrixCanvas"></canvas>
