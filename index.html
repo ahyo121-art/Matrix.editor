@@ -649,7 +649,7 @@ function resizeCanvas() {
   // Auto pixel size sesuai lebar layar HP/desktop
   var maxW = Math.min(window.innerWidth - 32, 700);
   S = Math.max(5, Math.floor(maxW / (panels * 8)));
-  cvs.width  = panels * 8 * S;
+  cvs.width  = panels * 8 * S +2;
   cvs.height = 8 * S;
 }
 
