@@ -649,7 +649,7 @@ function resizeCanvas() {
   // Auto pixel size sesuai lebar layar HP/desktop
   var maxW = Math.min(window.innerWidth - 32, 700);
   S = Math.max(5, Math.floor(maxW / (panels * 8)));
-  cvs.width  = panels * 8 * S +2;
+  cvs.width  = panels * 8 * S + 2;
   cvs.height = 8 * S;
 }
 
@@ -664,7 +664,7 @@ function redraw() {
   var panelColors = ['#0a1520','#0a2015','#200a10','#10100a'];
   for (var p = 0; p < panels; p++) {
     ctx.fillStyle = panelColors[p % 4];
-    ctx.fillRect(p*8*S +offsetX, 0, 8*S, 8*S);
+    ctx.fillRect(p*8*S, 0, 8*S, 8*S);
   }
 
   for (var p = 0; p < panels; p++) {
@@ -675,7 +675,7 @@ function redraw() {
           ctx.fillStyle = '#ffdd00';
           ctx.shadowColor = '#ffdd00';
           ctx.shadowBlur = 4;
-          ctx.fillRect(p*8*S + col*S + 1 + offsetX, row*S + 1, S-2, S-2);
+          ctx.fillRect(p*8*S + col*S + 1, row*S + 1, S-2, S-2);
           ctx.shadowBlur = 0;
         }
       }
