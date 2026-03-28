@@ -151,9 +151,10 @@
   select:focus, input:focus { outline: none; border-color: var(--accent); }
 
   .canvas-wrap {
-    overflow-x: auto;
+    overflow-x: hidden;
     margin: 12px 0;
     padding: 4px;
+    width: 100%;
   }
 
   #matrixCanvas {
@@ -484,6 +485,8 @@
        <button class="btn warn" id="btnErase" onclick="toggleErase()">✏ hapus</button>
       <div class="tb-sep"></div>
 
+      
+
       <span class="tb-label">SHIFT</span>
       <button class="btn shift" onclick="shiftFrame(0,-1)"  title="Shift Atas">↑</button>
       <button class="btn shift" onclick="shiftFrame(0,1)"   title="Shift Bawah">↓</button>
@@ -491,7 +494,7 @@
       <button class="btn shift" onclick="shiftFrame(1,0)"   title="Shift Kanan">→</button>
 
       <div class="tb-sep"></div>
-
+    </div>
 
     <div class="canvas-wrap">
       <canvas id="matrixCanvas"></canvas>
@@ -646,7 +649,8 @@ function resizeCanvas() {
   var panels = z.ep - z.sp + 1;
   var cvs = document.getElementById('matrixCanvas');
   // Auto pixel size sesuai lebar layar HP/desktop
-  var maxW = Math.min(window.innerWidth - 32, 700);
+  var wrap = document.querySelector('.canvas-wrap');
+  var maxW = wrap ? wrap.clientWidth - 8 : window.innerWidth - 48;
   S = Math.max(5, Math.floor(maxW / (panels * 8)));
   cvs.width  = panels * 8 * S;
   cvs.height = 8 * S;
