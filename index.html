@@ -648,7 +648,7 @@ function resizeCanvas() {
   // Auto pixel size sesuai lebar layar HP/desktop
   var maxW = Math.min(window.innerWidth - 32, 700);
   S = Math.max(5, Math.floor(maxW / (panels * 8)));
-  cvs.width  = panels * 8 * S + 2;
+  cvs.width  = panels * 8 * S;
   cvs.height = 8 * S;
 }
 
@@ -657,7 +657,7 @@ function redraw() {
   var panels = z.ep - z.sp + 1;
   var cvs = document.getElementById('matrixCanvas');
   var ctx = cvs.getContext('2d');
-  var offsetX =-Math.floor(S / 2);
+  
   var frame = z.frames[z.curFrame] || [];
 
   var panelColors = ['#0a1520','#0a2015','#200a10','#10100a'];
